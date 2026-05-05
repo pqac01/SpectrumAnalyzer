@@ -18,18 +18,20 @@ class AudioAnalyzer(
     @Volatile var smoothingFactor: Float = 0.6f
     @Volatile var minDb: Float = 25f
     @Volatile var maxDb: Float = 85f
-
+    @Volatile var isRecordingToFile: Boolean = false
     private var isRunning = false
-    private var previousMagnitudes: FloatArray? = null
 
+    private var previousMagnitudes: FloatArray? = null
     // Hamming window
     private val windowFactors = DoubleArray(bufferSize) { i ->
         0.5 * (1.0 - cos(2.0 * Math.PI * i / bufferSize))
     }
+
     private val fftBuffer = DoubleArray(bufferSize * 2)
     private val audioBuffer = ShortArray(bufferSize)
     private val fft = DoubleFFT_1D(bufferSize.toLong())
     var monitor: AudioMonitor? = null
+    var pcmWriter: PCMFileWriter? = null
 
     private fun getOptimalAudioSource(): Int {
         return if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.Q) {
@@ -63,6 +65,10 @@ class AudioAnalyzer(
             while (isRunning) {
                 val readCount = recorder.read(audioBuffer, 0, bufferSize)
                 if (readCount <= 0) continue
+
+                if (isRecordingToFile) {
+                    pcmWriter?.appendData(audioBuffer, readCount)
+                }
 
                 monitor?.feedAudio(audioBuffer, readCount)
 

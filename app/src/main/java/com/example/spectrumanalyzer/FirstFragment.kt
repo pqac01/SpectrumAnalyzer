@@ -18,6 +18,8 @@ class FirstFragment : Fragment() {
 
     private var isRecording = false
     private var isMonitoring = false
+    private var isRecordingToFile = false
+    private var pcmWriter: PCMFileWriter? = null
 
     override fun onCreateView(
         inflater: LayoutInflater, container: ViewGroup?,
@@ -30,17 +32,28 @@ class FirstFragment : Fragment() {
     override fun onViewCreated(view: View, savedInstanceState: Bundle?) {
         super.onViewCreated(view, savedInstanceState)
 
+        pcmWriter = PCMFileWriter(requireContext())
+
         binding.spectrogramView.settings = currentSettings
 
         setupAudioSystem()
 
         binding.btnRecord.setOnClickListener {
             if (!isRecording) {
+                if (isRecordingToFile) {
+                    pcmWriter?.startFile(currentSettings.sampleRate)
+                    audioAnalyzer?.isRecordingToFile = true
+                }
                 audioAnalyzer?.start()
                 isRecording = true
                 binding.btnRecord.text = getString(R.string.stopRecording)
             } else {
                 audioAnalyzer?.stop()
+                if (audioAnalyzer?.isRecordingToFile == true) {
+                    audioAnalyzer?.isRecordingToFile = false
+                    pcmWriter?.closeFile()
+                }
+
                 isRecording = false
                 binding.btnRecord.text = getString(R.string.startRecording)
             }
@@ -55,6 +68,19 @@ class FirstFragment : Fragment() {
                 audioMonitor?.stop()
                 isMonitoring = false
                 binding.btnMonitor.text = getString(R.string.startMonitoring)
+            }
+        }
+
+        binding.toggleRecordingToFile.setOnCheckedChangeListener { _, isChecked ->
+            isRecordingToFile = isChecked
+
+            if (isRecording && isChecked && audioAnalyzer?.isRecordingToFile == false) {
+                pcmWriter?.startFile(currentSettings.sampleRate)
+                audioAnalyzer?.isRecordingToFile = true
+            }
+            else if (isRecording && !isChecked && audioAnalyzer?.isRecordingToFile == true) {
+                audioAnalyzer?.isRecordingToFile = false
+                pcmWriter?.closeFile()
             }
         }
     }
@@ -80,6 +106,7 @@ class FirstFragment : Fragment() {
             minDb = currentSettings.minDb
             maxDb = currentSettings.maxDb
             monitor = audioMonitor
+            pcmWriter = this@FirstFragment.pcmWriter
         }
     }
 
@@ -118,6 +145,10 @@ class FirstFragment : Fragment() {
     private fun releaseAudioResources() {
         audioAnalyzer?.stop()
         audioMonitor?.stop()
+        if (audioAnalyzer?.isRecordingToFile == true) {
+            audioAnalyzer?.isRecordingToFile = false
+            pcmWriter?.closeFile()
+        }
         audioAnalyzer = null
         audioMonitor = null
     }

@@ -39,6 +39,10 @@
             android:layout_weight="1"
             android:layout_marginStart="2dp"
             android:text="@string/startMonitoring" />
+        <ToggleButton
+            android:id="@+id/toggleRecordingToFile"
+            android:layout_width="wrap_content"
+            android:layout_height="48dp" />
 
     </LinearLayout>
 
