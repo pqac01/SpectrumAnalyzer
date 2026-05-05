@@ -7,6 +7,7 @@ import android.view.Menu
 import android.view.MenuItem
 import androidx.appcompat.app.AppCompatActivity
 import androidx.core.app.ActivityCompat
+import androidx.navigation.findNavController
 import com.example.spectrumanalyzer.databinding.ActivityMainBinding
 
 class MainActivity : AppCompatActivity() {
@@ -32,10 +33,16 @@ class MainActivity : AppCompatActivity() {
     override fun onOptionsItemSelected(item: MenuItem): Boolean {
         return when (item.itemId) {
             R.id.action_settings -> {
-                // Megkeressük a fragmentet és szólunk neki
                 val navHostFragment = supportFragmentManager.findFragmentById(R.id.nav_host_fragment_content_main)
                 val currentFragment = navHostFragment?.childFragmentManager?.fragments?.get(0) as? FirstFragment
                 currentFragment?.showSettings()
+                true
+            }
+            R.id.action_recordings -> {
+                val navController = findNavController(R.id.nav_host_fragment_content_main)
+                if (navController.currentDestination?.id != R.id.SecondFragment) {
+                    navController.navigate(R.id.action_FirstFragment_to_SecondFragment)
+                }
                 true
             }
             else -> super.onOptionsItemSelected(item)
