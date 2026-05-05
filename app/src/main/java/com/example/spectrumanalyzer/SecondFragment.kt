@@ -20,7 +20,7 @@ class SecondFragment : Fragment() {
     private lateinit var fileManager: PCMFileManager
 
     private var audioTrack: AudioTrack? = null
-    
+
     @Volatile private var isPlaying = false
 
     override fun onCreateView(inflater: LayoutInflater, container: ViewGroup?, savedInstanceState: Bundle?): View {

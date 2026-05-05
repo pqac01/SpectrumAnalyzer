@@ -64,6 +64,26 @@ class SettingsBottomSheet(
             }
         }
 
+        // Spectrogram Palette Spinner
+        val paletteAdapter = ArrayAdapter(
+            requireContext(),
+            android.R.layout.simple_spinner_dropdown_item,
+            SpectrogramPalette.entries
+        )
+        binding.spinnerPalette.adapter = paletteAdapter
+        val currentPaletteIndex = SpectrogramPalette.entries.indexOf(initialSettings.palette)
+        binding.spinnerPalette.setSelection(if (currentPaletteIndex != -1) currentPaletteIndex else 0)
+        binding.spinnerPalette.onItemSelectedListener = object : AdapterView.OnItemSelectedListener {
+            override fun onItemSelected(parent: AdapterView<*>?, view: View?, position: Int, id: Long) {
+                val selectedPalette = SpectrogramPalette.entries[position]
+                if (initialSettings.palette != selectedPalette) {
+                    initialSettings.palette = selectedPalette
+                    onSettingsChanged(initialSettings)
+                }
+            }
+            override fun onNothingSelected(parent: AdapterView<*>?) {}
+        }
+
         // Sample Rate Spinner
         val rates = listOf(16000, 22050, 44100, 48000)
         val sampleRateAdapter = ArrayAdapter(requireContext(), android.R.layout.simple_spinner_dropdown_item, rates)
