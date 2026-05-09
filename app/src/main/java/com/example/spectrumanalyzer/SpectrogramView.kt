@@ -11,11 +11,9 @@ import android.view.View
 class SpectrogramView(context: Context, attrs: AttributeSet) : View(context, attrs) {
     private val paint: Paint = Paint().apply { isAntiAlias = false }
 
-    // A teljes spektrogram pixeleit ebben a tömbben tároljuk
     private var pixelBuffer: IntArray? = null
     private var spectrogramBitmap: Bitmap? = null
 
-    // Ez mutatja meg, hol tartunk éppen a rajzolásban (vízszintes pozíció)
     private var writePointer = 0
 
     private var yToFftIndexTable = IntArray(0)
@@ -28,7 +26,6 @@ class SpectrogramView(context: Context, attrs: AttributeSet) : View(context, att
             postInvalidate()
         }
 
-    // Amikor a View mérete megváltozik, újrageneráljuk a buffereket
     override fun onSizeChanged(w: Int, h: Int, oldw: Int, oldh: Int) {
         super.onSizeChanged(w, h, oldw, oldh)
         if (w > 0 && h > 0) {

@@ -1,6 +1,5 @@
 package com.example.spectrumanalyzer
 
-import android.media.AudioFormat
 import android.os.Bundle
 import android.view.LayoutInflater
 import android.view.View
@@ -8,7 +7,7 @@ import android.view.ViewGroup
 import androidx.fragment.app.Fragment
 import com.example.spectrumanalyzer.databinding.FragmentFirstBinding
 
-class FirstFragment : Fragment() {
+class SpectrogramFragment : Fragment() {
     private var _binding: FragmentFirstBinding? = null
     private val binding get() = _binding!!
     private var audioAnalyzer: AudioAnalyzer? = null
@@ -106,7 +105,7 @@ class FirstFragment : Fragment() {
             minDb = currentSettings.minDb
             maxDb = currentSettings.maxDb
             monitor = audioMonitor
-            pcmWriter = this@FirstFragment.pcmWriter
+            pcmWriter = this@SpectrogramFragment.pcmWriter
         }
     }
 

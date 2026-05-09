@@ -34,7 +34,7 @@ class MainActivity : AppCompatActivity() {
         return when (item.itemId) {
             R.id.action_settings -> {
                 val navHostFragment = supportFragmentManager.findFragmentById(R.id.nav_host_fragment_content_main)
-                val currentFragment = navHostFragment?.childFragmentManager?.fragments?.get(0) as? FirstFragment
+                val currentFragment = navHostFragment?.childFragmentManager?.fragments?.get(0) as? SpectrogramFragment
                 currentFragment?.showSettings()
                 true
             }

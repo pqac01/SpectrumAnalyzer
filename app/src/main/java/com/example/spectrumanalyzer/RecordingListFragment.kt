@@ -14,7 +14,7 @@ import com.example.spectrumanalyzer.databinding.FragmentSecondBinding
 import java.io.File
 import java.io.FileInputStream
 
-class SecondFragment : Fragment() {
+class RecordingListFragment : Fragment() {
     private var _binding: FragmentSecondBinding? = null
     private val binding get() = _binding!!
     private lateinit var fileManager: PCMFileManager
