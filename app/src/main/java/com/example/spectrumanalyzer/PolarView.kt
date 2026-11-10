@@ -1,23 +1,46 @@
 package com.example.spectrumanalyzer
 
 import android.content.Context
+import android.graphics.Bitmap
 import android.graphics.Canvas
 import android.graphics.Color
 import android.graphics.Paint
+import android.graphics.RectF
 import android.util.AttributeSet
 import android.view.View
+import kotlin.math.atan2
 import kotlin.math.cos
-import kotlin.math.sin
 import kotlin.math.max
-
+import kotlin.math.min
+import kotlin.math.sin
+import kotlin.math.sqrt
 class PolarView(context: Context, attrs: AttributeSet) : View(context, attrs) {
 
-    data class Point(val angleDeg: Float, val distanceMeters: Float)
+    data class Marker(val angleDeg: Float, val distanceMeters: Float)
 
     var maxRangeMeters: Float = 4f
         set(value) { field = value; postInvalidate() }
 
-    private val points = mutableListOf<Point>()
+    var palette: SpectrogramPalette = SpectrogramPalette.FIRE
+        set(value) { field = value; rebuildBitmap(); postInvalidate() }
+    var fillGapDeg: Float = 10f
+        set(value) { field = value; rebuildBitmap(); postInvalidate() }
+    var sweepAngleDeg: Float? = null
+        set(value) { field = value; postInvalidate() }
+
+    private var image: PpiImage? = null
+    private val markers = mutableListOf<Marker>()
+
+    private val imageSize = 400
+    private val pixelBuffer = IntArray(imageSize * imageSize)
+    private val imageBitmap: Bitmap = Bitmap.createBitmap(imageSize, imageSize, Bitmap.Config.ARGB_8888)
+
+    private var pixelBin = IntArray(0)
+    private var pixelCell = IntArray(0)
+    private var tableBinCount = -1
+    private var tableRangeCells = -1
+
+    private val bitmapPaint = Paint().apply { isFilterBitmap = true }
 
     private val gridPaint = Paint().apply {
         color = Color.argb(80, 255, 255, 255)
@@ -32,27 +55,107 @@ class PolarView(context: Context, attrs: AttributeSet) : View(context, attrs) {
         isAntiAlias = true
     }
 
-    private val pointPaint = Paint().apply {
-        color = Color.rgb(255, 80, 80)
-        style = Paint.Style.FILL
-        isAntiAlias = true
-    }
-
-    private val sweepPaint = Paint().apply {
-        color = Color.argb(60, 80, 220, 255)
+    private val markerPaint = Paint().apply {
+        color = Color.rgb(80, 220, 255)
         style = Paint.Style.STROKE
         strokeWidth = 3f
         isAntiAlias = true
     }
 
-    fun addPoint(angleDeg: Float, distanceMeters: Float) {
-        points.add(Point(angleDeg, distanceMeters))
+    private val sweepPaint = Paint().apply {
+        color = Color.argb(160, 80, 220, 255)
+        style = Paint.Style.STROKE
+        strokeWidth = 3f
+        isAntiAlias = true
+    }
+
+    fun setImage(newImage: PpiImage) {
+        image = newImage
+        rebuildBitmap()
+        postInvalidate()
+    }
+
+    fun setMarkers(newMarkers: List<Marker>) {
+        markers.clear()
+        markers.addAll(newMarkers)
         postInvalidate()
     }
 
     fun clear() {
-        points.clear()
+        image = null
+        markers.clear()
+        sweepAngleDeg = null
+        rebuildBitmap()
         postInvalidate()
+    }
+
+    private fun rebuildTables(binCount: Int, rangeCells: Int) {
+        val total = imageSize * imageSize
+        pixelBin = IntArray(total)
+        pixelCell = IntArray(total)
+        val center = imageSize / 2f
+        val radius = imageSize / 2f
+        val binDeg = 360f / binCount
+
+        for (y in 0 until imageSize) {
+            for (x in 0 until imageSize) {
+                val idx = y * imageSize + x
+                val dx = x + 0.5f - center
+                val dy = y + 0.5f - center
+                val r = sqrt(dx * dx + dy * dy)
+                if (r >= radius) {
+                    pixelCell[idx] = -1
+                    continue
+                }
+                var deg = Math.toDegrees(atan2(dx.toDouble(), (-dy).toDouble())).toFloat()
+                if (deg < 0f) deg += 360f
+                pixelBin[idx] = min(binCount - 1, (deg / binDeg).toInt())
+                pixelCell[idx] = min(rangeCells - 1, (r / radius * rangeCells).toInt())
+            }
+        }
+        tableBinCount = binCount
+        tableRangeCells = rangeCells
+    }
+
+    private fun rebuildBitmap() {
+        val img = image
+        if (img == null) {
+            pixelBuffer.fill(Color.TRANSPARENT)
+            imageBitmap.setPixels(pixelBuffer, 0, imageSize, 0, 0, imageSize, imageSize)
+            return
+        }
+
+        val binCount = img.bins.size
+        if (binCount != tableBinCount || img.rangeCells != tableRangeCells) {
+            rebuildTables(binCount, img.rangeCells)
+        }
+
+        val gapBins = (fillGapDeg / img.angleBinDeg).toInt()
+        val source = IntArray(binCount) { -1 }
+        for (b in 0 until binCount) {
+            if (img.bins[b] != null) {
+                source[b] = b
+                continue
+            }
+            for (d in 1..gapBins) {
+                val left = (b - d + binCount) % binCount
+                val right = (b + d) % binCount
+                if (img.bins[left] != null) { source[b] = left; break }
+                if (img.bins[right] != null) { source[b] = right; break }
+            }
+        }
+
+        val colors = IntArray(256) { palette.getColor(it) }
+        for (i in pixelBuffer.indices) {
+            val cell = pixelCell[i]
+            if (cell < 0) {
+                pixelBuffer[i] = Color.TRANSPARENT
+                continue
+            }
+            val src = source[pixelBin[i]]
+            pixelBuffer[i] = if (src < 0) Color.BLACK else colors[img.bins[src]!![cell].toInt() and 0xFF]
+        }
+        imageBitmap.setPixels(pixelBuffer, 0, imageSize, 0, 0, imageSize, imageSize)
     }
 
     override fun onDraw(canvas: Canvas) {
@@ -63,17 +166,27 @@ class PolarView(context: Context, attrs: AttributeSet) : View(context, attrs) {
 
         val cx = w / 2f
         val cy = h / 2f
-        val outerRadius = (max(1f, minOf(w, h)) / 2f) * 0.9f
+        val outerRadius = (max(1f, min(w, h)) / 2f) * 0.9f
         val range = max(0.1f, maxRangeMeters)
+
+        canvas.drawBitmap(
+            imageBitmap,
+            null,
+            RectF(cx - outerRadius, cy - outerRadius, cx + outerRadius, cy + outerRadius),
+            bitmapPaint
+        )
 
         drawGrid(canvas, cx, cy, outerRadius, range)
 
-        for (p in points) {
-            val r = (p.distanceMeters.coerceIn(0f, range) / range) * outerRadius
-            val angleRad = Math.toRadians((p.angleDeg - 90.0)).toFloat()
-            val px = cx + r * cos(angleRad)
-            val py = cy + r * sin(angleRad)
-            canvas.drawCircle(px, py, 8f, pointPaint)
+        for (m in markers) {
+            val r = (m.distanceMeters.coerceIn(0f, range) / range) * outerRadius
+            val angleRad = Math.toRadians((m.angleDeg - 90.0)).toFloat() // -90: 0 deg = up
+            canvas.drawCircle(cx + r * cos(angleRad), cy + r * sin(angleRad), 10f, markerPaint)
+        }
+
+        sweepAngleDeg?.let { deg ->
+            val angleRad = Math.toRadians((deg - 90.0)).toFloat()
+            canvas.drawLine(cx, cy, cx + outerRadius * cos(angleRad), cy + outerRadius * sin(angleRad), sweepPaint)
         }
     }
 
@@ -88,9 +201,7 @@ class PolarView(context: Context, attrs: AttributeSet) : View(context, attrs) {
 
         for (deg in 0 until 360 step 30) {
             val angleRad = Math.toRadians((deg - 90.0)).toFloat()
-            val x = cx + outerRadius * cos(angleRad)
-            val y = cy + outerRadius * sin(angleRad)
-            canvas.drawLine(cx, cy, x, y, gridPaint)
+            canvas.drawLine(cx, cy, cx + outerRadius * cos(angleRad), cy + outerRadius * sin(angleRad), gridPaint)
         }
 
         canvas.drawText("0°", cx - 10f, cy - outerRadius - 10f, labelPaint)

@@ -67,5 +67,7 @@
     <string name="sonar_save_debug_label">Nyers felvétel mentése (Felvételek listába)</string>
     <string name="sonar_diag_format">forrás: %1$s · jelszint: %2$d · vágott minta: %3$d · chirp: %4$s · SNR: %5$s</string>
     <string name="sonar_silenced_warning">FIGYELEM: a rendszer elnémította ezt a felvételt – állítsd le a spektrogram felvételét.</string>
+    <string name="sonar_leakage_active">Szivárgáskivonás aktív (%d irány)</string>
+    <string name="sonar_leakage_pending">Szivárgáskivonás még %d különböző irányú mérés után indul</string>
 
 </resources>
