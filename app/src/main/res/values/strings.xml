@@ -70,4 +70,17 @@
     <string name="sonar_leakage_active">Szivárgáskivonás aktív (%d irány)</string>
     <string name="sonar_leakage_pending">Szivárgáskivonás még %d különböző irányú mérés után indul</string>
 
+    <string name="sonar_mode_rotation">Forgatás mód</string>
+    <string name="sonar_start">Indítás</string>
+    <string name="sonar_stop">Leállítás</string>
+    <string name="sonar_rotation_hint">Fektesd a telefont képernyővel felfelé egy forgó felületre (forgó tálca, irodai szék), az alsó éle nézzen kifelé, minél közelebb a forgás középpontjához. Indítás után forgasd lassan, kb. 20–30°/s-mal (egy kör 12–18 s).</string>
+    <string name="sonar_no_rotation_sensor">Nincs forgásérzékelő (rotation vector) a telefonon – a forgatás mód nem használható</string>
+    <string name="sonar_speed_ok">%.0f°/s</string>
+    <string name="sonar_speed_too_fast">Lassabban! (%.0f°/s)</string>
+    <string name="sonar_tracking">követés · SNR %.0f dB</string>
+    <string name="sonar_rotation_status">%1$s\nlefedettség: %2$d° · %3$s · forrás: %4$s</string>
+    <string name="sonar_leakage_on_short">szivárgáskivonás aktív</string>
+    <string name="sonar_leakage_pending_deg">szivárgáskivonás még %d° lefedés után</string>
+    <string name="sonar_heading_fallback">Időbélyeg-párosítás sikertelen %d profilnál – a legutóbbi szöget használja</string>
+
 </resources>
