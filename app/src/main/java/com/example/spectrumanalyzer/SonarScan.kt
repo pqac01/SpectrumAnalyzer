@@ -9,9 +9,10 @@ data class RangeProfile(
     val angleDeg: Float,
     val values: FloatArray,
     val noiseLevel: Float,
-    val timestampNs: Long = 0L
+    val sampleIndex: Long = 0L
 )
 
+/** Render-ready polar image: per angle bin, intensity 0..255 per range cell (null = no data). */
 class PpiImage(
     val angleBinDeg: Float,
     val rangeCells: Int,

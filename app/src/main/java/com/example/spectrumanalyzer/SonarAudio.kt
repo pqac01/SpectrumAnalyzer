@@ -6,14 +6,9 @@ import android.media.AudioFormat
 import android.media.AudioRecord
 import android.media.AudioTrack
 import android.media.MediaRecorder
-import android.media.audiofx.AcousticEchoCanceler
-import android.media.audiofx.AutomaticGainControl
-import android.media.audiofx.NoiseSuppressor
-import android.util.Log
 import kotlin.math.max
 
 object SonarAudio {
-    private const val TAG = "SonarAudio"
 
     class RawRecorder(val record: AudioRecord, val sourceLabel: String)
 
@@ -24,31 +19,18 @@ object SonarAudio {
         )
         val bufferBytes = max(minBufferBytes, minSampleCount * 2) * 2 // headroom, 2 bytes/sample
 
-        val sourcesToTry = listOf(
-            MediaRecorder.AudioSource.UNPROCESSED to "UNPROCESSED",
-            MediaRecorder.AudioSource.MIC to "MIC (fallback)"
+        val recorder = AudioRecord(
+            MediaRecorder.AudioSource.UNPROCESSED,
+            sampleRate,
+            AudioFormat.CHANNEL_IN_MONO,
+            AudioFormat.ENCODING_PCM_16BIT,
+            bufferBytes
         )
-
-        for ((source, label) in sourcesToTry) {
-            try {
-                val recorder = AudioRecord(
-                    source,
-                    sampleRate,
-                    AudioFormat.CHANNEL_IN_MONO,
-                    AudioFormat.ENCODING_PCM_16BIT,
-                    bufferBytes
-                )
-                if (recorder.state == AudioRecord.STATE_INITIALIZED) {
-                    disableAudioEffectsIfPresent(recorder.audioSessionId)
-                    Log.i(TAG, "AudioRecord source in use: $label")
-                    return RawRecorder(recorder, label)
-                }
-                recorder.release()
-            } catch (e: Exception) {
-                Log.w(TAG, "source $label failed: ${e.message}")
-            }
+        if (recorder.state != AudioRecord.STATE_INITIALIZED) {
+            recorder.release()
+            return null
         }
-        return null
+        return RawRecorder(recorder, "UNPROCESSED")
     }
 
     fun buildStaticTrack(sampleRate: Int, pcm: ShortArray, loop: Boolean): AudioTrack {
@@ -78,19 +60,4 @@ object SonarAudio {
     }
 
     private const val AUDIO_SESSION_ID_DEFAULT = 0
-
-    private fun disableAudioEffectsIfPresent(audioSessionId: Int) {
-        try {
-            if (AcousticEchoCanceler.isAvailable()) {
-                AcousticEchoCanceler.create(audioSessionId)?.setEnabled(false)
-            }
-            if (AutomaticGainControl.isAvailable()) {
-                AutomaticGainControl.create(audioSessionId)?.setEnabled(false)
-            }
-            if (NoiseSuppressor.isAvailable()) {
-                NoiseSuppressor.create(audioSessionId)?.setEnabled(false)
-            }
-        } catch (_: Exception) {
-        }
-    }
 }

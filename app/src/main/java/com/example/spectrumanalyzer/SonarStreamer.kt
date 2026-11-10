@@ -1,8 +1,6 @@
 package com.example.spectrumanalyzer
 
 import android.media.AudioRecord
-import android.media.AudioTimestamp
-import android.os.SystemClock
 import android.util.Log
 import kotlin.math.log10
 
@@ -100,11 +98,7 @@ class SonarStreamer(
 
         val buffer = SampleBuffer(sampleRate * 2)
         val chunk = ShortArray(periodSamples / 2)
-        var totalRead = 0L
-
-        val timestamp = AudioTimestamp()
-        var anchorFrame = 0L
-        var anchorNs = SystemClock.elapsedRealtimeNanos()
+        samplesRecorded = 0L
 
         val acquireSamples = (sampleRate * ACQUIRE_WINDOW_MS / 1000.0).toInt()
         var nextDirectAbs = -1L // -1 = acquiring
@@ -128,14 +122,7 @@ class SonarStreamer(
                 if (n == 0) continue
 
                 if (buffer.append(chunk, n)) nextDirectAbs = -1L // fell behind: re-acquire
-                totalRead += n
-                if (recorder.getTimestamp(timestamp, AudioTimestamp.TIMEBASE_BOOTTIME) == AudioRecord.SUCCESS) {
-                    anchorFrame = timestamp.framePosition
-                    anchorNs = timestamp.nanoTime
-                } else {
-                    anchorFrame = totalRead
-                    anchorNs = SystemClock.elapsedRealtimeNanos()
-                }
+                samplesRecorded += n
 
                 var progressed = true
                 while (progressed && running) {
@@ -145,7 +132,10 @@ class SonarStreamer(
                         if (buffer.length >= acquireSamples) {
                             val found = acquire(buffer.data, acquireSamples)
                             if (found != null) {
-                                nextDirectAbs = buffer.startAbs + found + periodSamples
+                                var first = found
+                                while (first - periodSamples >= searchMargin) first -= periodSamples
+                                if (first < searchMargin) first += periodSamples
+                                nextDirectAbs = buffer.startAbs + first
                                 lost = 0
                                 buffer.discardBefore(nextDirectAbs - searchMargin)
                             } else {
@@ -169,8 +159,7 @@ class SonarStreamer(
                     val ping = trackOne(buffer.data, offset)
                     if (ping != null) {
                         val directAbs = segmentStartAbs + ping.directOffset
-                        val timeNs = anchorNs + (directAbs - anchorFrame) * 1_000_000_000L / sampleRate
-                        onProfile(ping.profile.copy(timestampNs = timeNs))
+                        onProfile(ping.profile.copy(sampleIndex = directAbs))
                         onStatus(Status(true, ping.snrDb, raw.sourceLabel))
                         nextDirectAbs = directAbs + periodSamples
                         lost = 0

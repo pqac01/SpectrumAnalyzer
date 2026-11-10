@@ -17,11 +17,12 @@ object ChirpGenerator {
         val durationSec = sampleCount.toDouble() / sampleRate
 
         val chirp = ShortArray(sampleCount)
-        val k = (endFreqHz - startFreqHz) / durationSec
+        val k = (endFreqHz - startFreqHz) / durationSec // chirp rate (Hz/s)
 
         for (i in 0 until sampleCount) {
             val t = i.toDouble() / sampleRate
 
+            // Linear chirp instantaneous phase: phi(t) = 2*pi*(f0*t + k/2*t^2)
             val phase = 2.0 * PI * (startFreqHz * t + 0.5 * k * t * t)
             val sample = cos(phase)
 

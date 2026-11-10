@@ -73,14 +73,15 @@
     <string name="sonar_mode_rotation">Forgatás mód</string>
     <string name="sonar_start">Indítás</string>
     <string name="sonar_stop">Leállítás</string>
-    <string name="sonar_rotation_hint">Fektesd a telefont képernyővel felfelé egy forgó felületre (forgó tálca, irodai szék), az alsó éle nézzen kifelé, minél közelebb a forgás középpontjához. Indítás után forgasd lassan, kb. 20–30°/s-mal (egy kör 12–18 s).</string>
-    <string name="sonar_no_rotation_sensor">Nincs forgásérzékelő (rotation vector) a telefonon – a forgatás mód nem használható</string>
-    <string name="sonar_speed_ok">%.0f°/s</string>
-    <string name="sonar_speed_too_fast">Lassabban! (%.0f°/s)</string>
+    <string name="sonar_rotation_hint">Fektesd a telefont képernyővel felfelé egy forgó felületre, az alsó éle nézzen kifelé, minél közelebb a forgás középpontjához. Tegyél egy jelet a felületre, és igazítsd hozzá a telefont. Nyomd meg az Indítást, majd felülről nézve az óramutató járásával megegyezően, egyenletesen forgasd körbe pontosan egyszer (kb. 12–18 s). Amikor a jel visszaér, nyomd meg a Leállítást.</string>
+    <string name="sonar_elapsed">%.1f s</string>
     <string name="sonar_tracking">követés · SNR %.0f dB</string>
-    <string name="sonar_rotation_status">%1$s\nlefedettség: %2$d° · %3$s · forrás: %4$s</string>
+    <string name="sonar_turn_progress">Forgatás folyamatban – %1$d profil · %2$s</string>
+    <string name="sonar_turn_result">1 kör: %1$.1f s (%2$.0f°/s)</string>
+    <string name="sonar_turn_too_fast">Túl gyors volt (%.0f°/s) – egy kör legalább 12 s legyen</string>
+    <string name="sonar_turn_summary">%1$d profil · lefedettség: %2$d° · %3$s · forrás: %4$s</string>
+    <string name="sonar_turn_no_data">Nem érkezett feldolgozható mérés – %s</string>
     <string name="sonar_leakage_on_short">szivárgáskivonás aktív</string>
-    <string name="sonar_leakage_pending_deg">szivárgáskivonás még %d° lefedés után</string>
-    <string name="sonar_heading_fallback">Időbélyeg-párosítás sikertelen %d profilnál – a legutóbbi szöget használja</string>
+    <string name="sonar_leakage_off_short">szivárgáskivonás nem aktív (kevés irány)</string>
 
 </resources>
