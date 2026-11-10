@@ -8,6 +8,11 @@ tools:context="com.example.spectrumanalyzer.MainActivity">
     android:title="@string/action_recordings"
     app:showAsAction="ifRoom" />
 <item
+    android:id="@+id/action_sonar"
+    android:icon="@android:drawable/ic_menu_compass"
+    android:title="@string/action_sonar"
+    app:showAsAction="ifRoom" />
+<item
     android:id="@+id/action_settings"
     android:title="@string/action_settings"
     app:showAsAction="never" />

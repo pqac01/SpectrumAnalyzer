@@ -51,4 +51,21 @@
     <string name="startMonitoring">Monitor indítása</string>
     <string name="stopMonitoring">Monitor kikapcsolása</string>
 
+    <string name="action_sonar">Szonár</string>
+    <string name="sonar_ping">Mérés</string>
+    <string name="sonar_clear">Törlés</string>
+    <string name="sonar_angle_label">Szög:</string>
+    <string name="sonar_result_placeholder">—</string>
+    <string name="sonar_measuring">mérés…</string>
+    <string name="sonar_no_echo">Nincs visszhang</string>
+    <string name="sonar_no_permission">Nincs mikrofon engedély</string>
+    <string name="sonar_distance_format">%.2f m</string>
+    <string name="sonar_failed">Sikertelen mérés</string>
+    <string name="sonar_no_echo_in_range">A chirp megvan, de %1$.1f–%2$.1f m között nincs visszhang a küszöb felett</string>
+    <string name="sonar_echo_item">%1$.2f m (%2$.0f dB)</string>
+    <string name="sonar_echoes_prefix">Visszhangok:</string>
+    <string name="sonar_save_debug_label">Nyers felvétel mentése (Felvételek listába)</string>
+    <string name="sonar_diag_format">forrás: %1$s · jelszint: %2$d · vágott minta: %3$d · chirp: %4$s · SNR: %5$s</string>
+    <string name="sonar_silenced_warning">FIGYELEM: a rendszer elnémította ezt a felvételt – állítsd le a spektrogram felvételét.</string>
+
 </resources>
