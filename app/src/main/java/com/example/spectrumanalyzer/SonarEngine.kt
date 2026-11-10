@@ -26,7 +26,6 @@ class SonarEngine(
     data class SonarResult(
         val success: Boolean,
         val echoes: List<Echo> = emptyList(),
-        val primaryDistanceMeters: Double? = null,
         val errorMessage: String? = null,
         val audioSourceUsed: String = "N/A",
         val clientSilenced: Boolean? = null,

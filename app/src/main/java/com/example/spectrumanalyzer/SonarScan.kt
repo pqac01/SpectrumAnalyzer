@@ -4,6 +4,7 @@ import kotlin.math.floor
 import kotlin.math.log10
 import kotlin.math.max
 import kotlin.math.min
+import kotlin.math.pow
 
 data class RangeProfile(
     val angleDeg: Float,
@@ -27,7 +28,13 @@ class SonarScan(
     private val maxRangeMeters: Double
 ) {
     companion object {
-        const val DISPLAY_RANGE_DB = 40.0
+        const val RAW_DISPLAY_RANGE_DB = 40.0
+
+        const val CONTRAST_THRESHOLD_DB = 6.0
+
+        const val CONTRAST_DISPLAY_SPAN_DB = 20.0
+
+        private const val MIN_VISIBLE_INTENSITY = 64
     }
 
     val binCount = (360f / angleBinDeg).toInt()
@@ -91,15 +98,10 @@ class SonarScan(
         leakage = result
     }
 
-    @Synchronized
-    fun cleanedProfile(bin: Int): FloatArray? {
+    private fun averagedProfile(bin: Int): FloatArray? {
         val sum = sums[bin] ?: return null
         val n = counts[bin]
-        val l = leakage
-        return FloatArray(profileLength) { i ->
-            val v = sum[i] / n
-            if (l != null) max(0f, v - l[i]) else v
-        }
+        return FloatArray(profileLength) { i -> sum[i] / n }
     }
 
     @Synchronized
@@ -107,9 +109,32 @@ class SonarScan(
         if (counts[bin] > 0) noiseSums[bin].toDouble() / counts[bin] else 0.0
 
     @Synchronized
+    fun contrastDb(bin: Int): FloatArray? {
+        val profile = averagedProfile(bin) ?: return null
+        val noise = noiseLevel(bin).coerceAtLeast(1e-12)
+        val median = leakage
+        val echoFloor = noise * 10.0.pow(EchoDetector.ECHO_THRESHOLD_DB / 20.0)
+        return FloatArray(profileLength) { i ->
+            val v = profile[i].toDouble()
+            if (median == null) {
+                if (v > noise) (20.0 * log10(v / noise)).toFloat() else 0f
+            } else {
+                val reference = max(median[i].toDouble(), noise)
+                val db = 20.0 * log10(max(v, 1e-12) / reference)
+                if (v > echoFloor && db >= CONTRAST_THRESHOLD_DB) db.toFloat() else 0f
+            }
+        }
+    }
+    @Synchronized
     fun echoesAt(bin: Int): List<Echo> {
-        val profile = cleanedProfile(bin) ?: return emptyList()
-        return EchoDetector.detect(profile, noiseLevel(bin), sampleRate, minRangeMeters, maxRangeMeters)
+        val profile = averagedProfile(bin) ?: return emptyList()
+        val searched = if (leakage == null) {
+            profile
+        } else {
+            val contrast = contrastDb(bin) ?: return emptyList()
+            FloatArray(profileLength) { i -> if (contrast[i] > 0f) profile[i] else 0f }
+        }
+        return EchoDetector.detect(searched, noiseLevel(bin), sampleRate, minRangeMeters, maxRangeMeters)
     }
 
     @Synchronized
@@ -119,19 +144,24 @@ class SonarScan(
     fun toImage(rangeCells: Int): PpiImage {
         val bins = arrayOfNulls<ByteArray>(binCount)
         if (profileLength > 0) {
+            val active = leakage != null
             val minIndex = SonarGeometry.rangeToSamples(minRangeMeters, sampleRate)
             for (bin in 0 until binCount) {
                 if (counts[bin] == 0) continue
-                val profile = cleanedProfile(bin) ?: continue
-                val noise = noiseLevel(bin).coerceAtLeast(1e-12)
+                val contrast = contrastDb(bin) ?: continue
                 val cells = ByteArray(rangeCells)
                 for (c in 0 until rangeCells) {
                     val from = max(minIndex, c * profileLength / rangeCells)
                     val to = min(profileLength, max(from + 1, (c + 1) * profileLength / rangeCells))
-                    var peak = 0f
-                    for (i in from until to) if (profile[i] > peak) peak = profile[i]
-                    val db = if (peak > 0f) 20.0 * log10(peak / noise) else 0.0
-                    cells[c] = (db / DISPLAY_RANGE_DB * 255.0).coerceIn(0.0, 255.0).toInt().toByte()
+                    var peakDb = 0f
+                    for (i in from until to) if (contrast[i] > peakDb) peakDb = contrast[i]
+                    val intensity = when {
+                        !active -> peakDb / RAW_DISPLAY_RANGE_DB * 255.0
+                        peakDb <= 0f -> 0.0
+                        else -> MIN_VISIBLE_INTENSITY +
+                                (peakDb - CONTRAST_THRESHOLD_DB) / CONTRAST_DISPLAY_SPAN_DB * (255 - MIN_VISIBLE_INTENSITY)
+                    }
+                    cells[c] = intensity.coerceIn(0.0, 255.0).toInt().toByte()
                 }
                 bins[bin] = cells
             }

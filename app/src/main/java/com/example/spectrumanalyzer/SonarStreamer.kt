@@ -48,6 +48,10 @@ class SonarStreamer(
     @Volatile private var running = false
     private var worker: Thread? = null
 
+    /** Samples recorded since start. Read it after stop() for the length of the turn. */
+    @Volatile var samplesRecorded: Long = 0L
+        private set
+
     fun start() {
         if (running) return
         running = true
